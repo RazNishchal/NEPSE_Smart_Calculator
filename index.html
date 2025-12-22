@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NRS NEPSE Smart Calculator</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --text: #0f172a;
+        --primary: #2563eb;
+        --border: #e2e8f0;
+        --slider-bg: #e2e8f0;
+        --success: #10b981;
+        --danger: #ef4444;
+      }
+
+      body.dark-theme {
+        --bg: #020617;
+        --card: #1e293b;
+        --text: #f8fafc;
+        --primary: #3b82f6;
+        --border: #334155;
+        --slider-bg: #334155;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        transition: 0.3s;
+      }
+
+      .calc-wrapper {
+        background: var(--card);
+        width: 100%;
+        max-width: 450px;
+        padding: 1.5rem;
+        border-radius: 24px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .theme-slider {
+        width: 50px;
+        height: 26px;
+        background: var(--slider-bg);
+        border-radius: 50px;
+        position: relative;
+        cursor: pointer;
+      }
+      .theme-slider::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        transition: 0.3s;
+      }
+      body.dark-theme .theme-slider::after {
+        transform: translateX(24px);
+      }
+
+      .mode-toggle {
+        display: flex;
+        background: var(--slider-bg);
+        border-radius: 14px;
+        padding: 4px;
+        position: relative;
+        margin-bottom: 1.5rem;
+      }
+      .mode-btn {
+        flex: 1;
+        padding: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        z-index: 1;
+        font-weight: bold;
+      }
+      .mode-btn.active {
+        color: white;
+      }
+      .slider-thumb {
+        position: absolute;
+        width: calc(50% - 4px);
+        height: calc(100% - 8px);
+        background: var(--primary);
+        border-radius: 10px;
+        transition: 0.3s;
+      }
+
+      .wacc-toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg);
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        cursor: pointer;
+        border: 1px solid var(--border);
+      }
+
+      .wacc-toggle-container input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        cursor: pointer;
+        accent-color: var(--primary);
+      }
+      .wacc-toggle-container label {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 400px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+      label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        opacity: 0.7;
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 0.85rem;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1rem;
+        outline: none;
+      }
+
+      .result-panel {
+        margin-top: 1.5rem;
+        background: var(--bg);
+        padding: 1.25rem;
+        border-radius: 18px;
+        border-top: 4px solid var(--primary);
+      }
+      .res-line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.6rem;
+        font-size: 0.9rem;
+      }
+      .total {
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--primary);
+        border-top: 1px dashed var(--border);
+        padding-top: 10px;
+        margin-top: 5px;
+      }
+      .profit-line {
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        text-align: center;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calc-wrapper">
+      <div class="header">
+        <h2 style="margin: 0">NRS NEPSE</h2>
+        <div class="theme-slider" onclick="toggleTheme()"></div>
+      </div>
+
+      <div class="mode-toggle">
+        <div class="slider-thumb" id="thumb"></div>
+        <div class="mode-btn active" id="buy-tab" onclick="changeMode('buy')">
+          BUY
+        </div>
+        <div class="mode-btn" id="sell-tab" onclick="changeMode('sell')">
+          SELL
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="input-box">
+          <label>Quantity</label>
+          <input type="number" id="qty" value="100" oninput="calculate()" />
+        </div>
+        <div class="input-box">
+          <label id="price-label">Buy Price (Rs.)</label>
+          <input type="number" id="price" value="200" oninput="calculate()" />
+        </div>
+
+        <div id="sell-fields" class="full-width hidden">
+          <div class="wacc-toggle-container" onclick="toggleCheckbox()">
+            <input
+              type="checkbox"
+              id="is-wacc"
+              checked
+              onchange="toggleWaccLabel(); calculate();"
+              onclick="event.stopPropagation()"
+            />
+            <label for="is-wacc">Value below is already WACC</label>
+          </div>
+
+          <div class="form-grid">
+            <div class="input-box">
+              <label id="buy-input-label">WACC Value (Rs.)</label>
+              <input
+                type="number"
+                id="buy-input-val"
+                value="180"
+                oninput="calculate()"
+              />
+            </div>
+            <div class="input-box">
+              <label>Holding Tax</label>
+              <select id="tax" onchange="calculate()">
+                <option value="0.05">5% (Long)</option>
+                <option value="0.075" selected>7.5% (Short)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-panel" id="result"></div>
+    </div>
+
+    <script>
+      let mode = "buy";
+      const DP_CHARGE = 25;
+
+      function toggleTheme() {
+        document.body.classList.toggle("dark-theme");
+        localStorage.setItem(
+          "nrs_theme",
+          document.body.classList.contains("dark-theme") ? "dark" : "light"
+        );
+      }
+      if (localStorage.getItem("nrs_theme") === "dark")
+        document.body.classList.add("dark-theme");
+
+      function toggleCheckbox() {
+        const cb = document.getElementById("is-wacc");
+        cb.checked = !cb.checked;
+        toggleWaccLabel();
+        calculate();
+      }
+
+      function changeMode(m) {
+        mode = m;
+        document.getElementById("thumb").style.transform =
+          mode === "buy" ? "translateX(0%)" : "translateX(100%)";
+        document
+          .getElementById("buy-tab")
+          .classList.toggle("active", mode === "buy");
+        document
+          .getElementById("sell-tab")
+          .classList.toggle("active", mode === "sell");
+        document
+          .getElementById("sell-fields")
+          .classList.toggle("hidden", mode === "buy");
+        document.getElementById("price-label").innerText =
+          mode === "buy" ? "Purchase Price" : "Selling Price";
+        calculate();
+      }
+
+      function toggleWaccLabel() {
+        const checked = document.getElementById("is-wacc").checked;
+        document.getElementById("buy-input-label").innerText = checked
+          ? "WACC Value (Rs.)"
+          : "Original Buy Price";
+      }
+
+      function getComm(amt) {
+        if (amt <= 50000) return Math.max(10, amt * 0.0036);
+        if (amt <= 500000) return amt * 0.0033;
+        if (amt <= 2000000) return amt * 0.0031;
+        if (amt <= 10000000) return amt * 0.0027;
+        return amt * 0.0024;
+      }
+
+      function calculate() {
+        const qty = parseFloat(document.getElementById("qty").value) || 0;
+        const price = parseFloat(document.getElementById("price").value) || 0;
+        const amount = qty * price;
+        const sebon = amount * 0.00015;
+        const comm = getComm(amount);
+
+        let html = "";
+
+        if (mode === "buy") {
+          const total = amount + comm + sebon + DP_CHARGE;
+          html = `
+                    <div class="res-line"><span>Purchase Amount:</span><span>Rs. ${amount.toLocaleString()}</span></div>
+                    <div class="res-line"><span>Broker & SEBON:</span><span>Rs. ${(
+                      comm + sebon
+                    ).toFixed(2)}</span></div>
+                    <div class="res-line"><span>DP Charge:</span><span>Rs. ${DP_CHARGE.toFixed(
+                      2
+                    )}</span></div>
+                    <div class="res-line total"><span>Total Cost (WACC):</span><span>Rs. ${total.toLocaleString()}</span></div>
+                    <div class="res-line" style="font-size: 0.8rem; opacity: 0.7;"><span>WACC per Unit:</span><span>Rs. ${(
+                      total / qty
+                    ).toFixed(2)}</span></div>
+                `;
+        } else {
+          const isWacc = document.getElementById("is-wacc").checked;
+          const inputVal =
+            parseFloat(document.getElementById("buy-input-val").value) || 0;
+          let totalBuyCost = 0;
+
+          if (isWacc) {
+            totalBuyCost = inputVal * qty; // Already contains original DP
+          } else {
+            const bAmt = inputVal * qty;
+            totalBuyCost = bAmt + getComm(bAmt) + bAmt * 0.00015 + DP_CHARGE;
+          }
+
+          const sellFees = comm + sebon + DP_CHARGE;
+          const netProfitBeforeTax = amount - totalBuyCost - sellFees;
+          const tax =
+            netProfitBeforeTax > 0
+              ? netProfitBeforeTax *
+                parseFloat(document.getElementById("tax").value)
+              : 0;
+          const receivable = amount - sellFees - tax;
+          const finalNetProfit = receivable - totalBuyCost;
+
+          const profitColor =
+            finalNetProfit >= 0 ? "var(--success)" : "var(--danger)";
+          const profitLabel = finalNetProfit >= 0 ? "Net Profit" : "Net Loss";
+
+          html = `
+                    <div class="res-line"><span>Gross Sell:</span><span>Rs. ${amount.toLocaleString()}</span></div>
+                    <div class="res-line"><span>Broker & SEBON:</span><span>Rs. ${(
+                      comm + sebon
+                    ).toFixed(2)}</span></div>
+                    <div class="res-line"><span>DP Charge (Sell):</span><span>Rs. ${DP_CHARGE.toFixed(
+                      2
+                    )}</span></div>
+                    <div class="res-line"><span>Capital Gain Tax:</span><span>Rs. ${tax.toFixed(
+                      2
+                    )}</span></div>
+                    <div class="res-line total"><span>Bank Receivable:</span><span>Rs. ${receivable.toLocaleString()}</span></div>
+                    <div class="profit-line" style="background: ${profitColor}15; color: ${profitColor}; border: 1px solid ${profitColor}30;">
+                        ${profitLabel}: Rs. ${finalNetProfit.toLocaleString(
+            undefined,
+            { minimumFractionDigits: 2 }
+          )}
+                    </div>
+                `;
+        }
+        document.getElementById("result").innerHTML = html;
+      }
+      calculate();
+    </script>
+  </body>
+</html>
