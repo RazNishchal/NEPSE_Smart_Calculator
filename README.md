@@ -1,4 +1,7 @@
 You can find this project in this link of Netlify:   https://delicate-pie-90da05.netlify.app/  \
+
+You can find it live on :  https://nepse-smart-calculator.vercel.app/
+
 View live my portfolio : www.nishchalrajsubedi.com.np  \ https://my-portfolio-website-nu-gray.vercel.app/  \
  You can view my other project live here :  \
 Task Tracker with Login and Firebase DB: https://tasktrackernishchal.vercel.app/  \
